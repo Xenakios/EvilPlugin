@@ -102,7 +102,11 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 		m_worker_cpu_waster.m_amount_to_waste = m_slider_waste_worker_cpu.getValue();
 	};
 	m_worker_cpu_waster.startThread();
-	m_devil = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\devil1.png"));
+#ifdef WIN32
+    m_devil = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\devil1.png"));
+#else
+    m_devil = ImageFileFormat::loadFrom(File("/Users/teemu/Downloads/19022019/devil.png"));
+#endif
 	setSize (500, 340);
 }
 

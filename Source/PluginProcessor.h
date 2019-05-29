@@ -81,6 +81,7 @@ public:
 	double m_cpu_waste_amount = 0.0;
 private:
 	std::mt19937 m_rnd;
+	double m_osc_phase = 0.0;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EvilPluginAudioProcessor)
 };

@@ -19,7 +19,7 @@ void stackoverflowfunc(int x)
 
 //==============================================================================
 EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
+    : AudioProcessorEditor (&p), processor (p), m_mutex_thread(&p)
 {
 	StringArray buttexts{ "Access violation type 1", "Access violation type 2",
 	"Stack overflow", "Divide by zero","Sleep in GUI thread", "Sleep in audio thread" };
@@ -46,10 +46,9 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	tog->setButtonText("Lock audio thread mutex");
 	tog->onClick = [this,togcap=tog.get()]() 
 	{
-		if (togcap->getToggleState() == true)
-			processor.m_cs.enter();
-		else
-			processor.m_cs.exit();
+		if (m_mutex_thread.isThreadRunning() == false)
+			m_mutex_thread.startThread();
+		m_mutex_thread.m_lock_mutex = togcap->getToggleState();
 	};
 	m_buttons.push_back(std::move(tog));
 	addAndMakeVisible(m_label_waste_gui_cpu);
@@ -86,6 +85,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 
 EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
 {
+	m_mutex_thread.stopThread(1000);
 }
 
 //==============================================================================

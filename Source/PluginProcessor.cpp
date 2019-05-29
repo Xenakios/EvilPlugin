@@ -95,8 +95,7 @@ void EvilPluginAudioProcessor::changeProgramName (int index, const String& newNa
 //==============================================================================
 void EvilPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+	m_osc_phase = 0.0;
 }
 
 void EvilPluginAudioProcessor::releaseResources()
@@ -138,7 +137,13 @@ void EvilPluginAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuf
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
+	for (int i = 0; i < buffer.getNumSamples(); ++i)
+	{
+		float s = 0.02*sin(2 * 3.141592 / getSampleRate()*m_osc_phase*440.0);
+		for (int j = 0; j < buffer.getNumChannels(); ++j)
+			buffer.setSample(j, i, s);
+		m_osc_phase += 1.0;
+	}
 	if (m_sleep_in_audio_thread)
 	{
 		Thread::sleep(1000);
@@ -146,18 +151,9 @@ void EvilPluginAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuf
 	}
 	if (m_cpu_waste_amount > 0.0)
 	{
-		std::uniform_real_distribution<double> dist(-1.0, 1.0);
-		volatile double acc = 0.0;
 		double bufferclocklen = 1000.0 / getSampleRate()*buffer.getNumSamples();
 		double timetospend = bufferclocklen * m_cpu_waste_amount / 100.0;
-		double t0 = Time::getMillisecondCounterHiRes();
-		while (true)
-		{
-			acc += dist(m_rnd);
-			double t1 = Time::getMillisecondCounterHiRes();
-			if (t1 >= t0 + timetospend)
-				break;
-		}
+		CPU_waster(m_rnd, timetospend);
 	}
 }
 

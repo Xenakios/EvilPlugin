@@ -103,5 +103,7 @@ private:
 	MutexLockerThread m_mutex_thread;
 	CPUWasterThread m_worker_cpu_waster;
 	Image m_devil;
+    Image m_kitty;
+    bool m_gui_is_sleeping = false;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EvilPluginAudioProcessorEditor)
 };

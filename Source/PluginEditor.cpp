@@ -31,7 +31,18 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 		[]() {},
 		[]() { g_stackoverflowcb = stackoverflowfunc1; volatile int x = 0; stackoverflowfunc1(x); },
 		[]() { volatile int x = 0; volatile int y = x / 0; },
-		[]() { Thread::sleep(1000); },
+		[this]()
+        {
+            m_gui_is_sleeping = true;
+            repaint();
+            MessageManager::callAsync([this]()
+                                      {
+                                          Thread::sleep(5000);
+                                          m_gui_is_sleeping = false;
+                                          repaint();
+                                      });
+            
+        },
 		[this]() { processor.m_sleep_in_audio_thread=true; },
 	};
 	jassert(callbacks.size() == buttexts.size());
@@ -106,6 +117,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
     m_devil = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\devil1.png"));
 #else
     m_devil = ImageFileFormat::loadFrom(File("/Users/teemu/Downloads/19022019/devil.png"));
+    m_kitty = ImageFileFormat::loadFrom(File("/Users/teemu/Downloads/19022019/kitty1.jpg"));
+    
 #endif
 	setSize (500, 340);
 }
@@ -120,8 +133,13 @@ EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
 void EvilPluginAudioProcessorEditor::paint (Graphics& g)
 {
 	g.fillAll(Colours::black);
-	if (m_devil.isValid())
+	if (m_devil.isValid() && m_gui_is_sleeping == false)
 		g.drawImageWithin(m_devil, 0, 0, getWidth(), getHeight(), RectanglePlacement::xRight);
+    if (m_kitty.isValid() && m_gui_is_sleeping == true)
+    {
+        g.addTransform(AffineTransform::scale(-1.0f, 1.0f,getWidth()/2,getHeight()/2));
+        g.drawImageWithin(m_kitty, 0, 0, getWidth(), getHeight(), RectanglePlacement::fillDestination);
+    }
 }
 
 void EvilPluginAudioProcessorEditor::resized()

@@ -78,20 +78,27 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	addAndMakeVisible(m_slider_waste_worker_cpu);
 	m_slider_waste_worker_cpu.setRange(0.0, 100.0);
 	m_slider_waste_worker_cpu.setValue(0.0, dontSendNotification);
-	m_slider_waste_worker_cpu.onValueChange = [this]() {};
-
+	m_slider_waste_worker_cpu.onValueChange = [this]() 
+	{
+		m_worker_cpu_waster.m_amount_to_waste = m_slider_waste_worker_cpu.getValue();
+	};
+	m_worker_cpu_waster.startThread();
+	//m_devil = ImageFileFormat::loadFrom(BinaryData::devil1_png, BinaryData::devil1_pngSize);
 	setSize (400, 310);
 }
 
 EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
 {
 	m_mutex_thread.stopThread(1000);
+	m_worker_cpu_waster.stopThread(1000);
 }
 
 //==============================================================================
 void EvilPluginAudioProcessorEditor::paint (Graphics& g)
 {
 	g.fillAll(Colours::black);
+	if (m_devil.isValid())
+		g.drawImageWithin(m_devil, 0, 0, getWidth(), getHeight(), RectanglePlacement::xRight);
 }
 
 void EvilPluginAudioProcessorEditor::resized()

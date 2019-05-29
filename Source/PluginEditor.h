@@ -13,6 +13,31 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
 
+class CPUWasterThread : public Thread
+{
+public:
+	CPUWasterThread() : Thread("EvilPluginCPUWasterThread") {}
+	double m_amount_to_waste = 0.0;
+	void run() override
+	{
+		while (true)
+		{
+			if (threadShouldExit())
+				break;
+			if (m_amount_to_waste > 0.0)
+			{
+				double millistowaste = m_amount_to_waste * 10.0;
+				CPU_waster(m_rnd, millistowaste);
+				Thread::sleep(1000.0 - millistowaste);
+			}
+			else
+				Thread::sleep(500);
+		}
+	}
+private:
+	std::mt19937 m_rnd;
+};
+
 class MutexLockerThread : public Thread
 {
 public:
@@ -76,5 +101,7 @@ private:
 	Slider m_slider_waste_worker_cpu;
 	std::mt19937 m_rnd;
 	MutexLockerThread m_mutex_thread;
+	CPUWasterThread m_worker_cpu_waster;
+	Image m_devil;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EvilPluginAudioProcessorEditor)
 };

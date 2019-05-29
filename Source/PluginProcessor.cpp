@@ -24,6 +24,9 @@ EvilPluginAudioProcessor::EvilPluginAudioProcessor()
                        )
 #endif
 {
+	//static int count = 0;
+	//m_osc_frequency += (double)count*10.0;
+	//++count;
 }
 
 EvilPluginAudioProcessor::~EvilPluginAudioProcessor()
@@ -92,10 +95,13 @@ void EvilPluginAudioProcessor::changeProgramName (int index, const String& newNa
 {
 }
 
+double g_osc_phase = 0.0;
+
 //==============================================================================
 void EvilPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
 	m_osc_phase = 0.0;
+	g_osc_phase = 0.0;
 }
 
 void EvilPluginAudioProcessor::releaseResources()
@@ -128,6 +134,8 @@ bool EvilPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layout
 }
 #endif
 
+
+
 void EvilPluginAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
 	ScopedLock locker(m_cs);
@@ -137,12 +145,15 @@ void EvilPluginAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuf
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+	double* oscphasevariable = &m_osc_phase;
+	if (m_use_global_variable)
+		oscphasevariable = &g_osc_phase;
 	for (int i = 0; i < buffer.getNumSamples(); ++i)
 	{
-		float s = 0.02*sin(2 * 3.141592 / getSampleRate()*m_osc_phase*440.0);
+		float s = 0.02*sin(2 * 3.141592 / getSampleRate()*(*oscphasevariable)*m_osc_frequency);
 		for (int j = 0; j < buffer.getNumChannels(); ++j)
 			buffer.setSample(j, i, s);
-		m_osc_phase += 1.0;
+		(*oscphasevariable) += 1.0;
 	}
 	if (m_sleep_in_audio_thread)
 	{

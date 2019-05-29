@@ -79,9 +79,11 @@ public:
 	bool m_sleep_in_audio_thread = false;
 	CriticalSection m_cs;
 	double m_cpu_waste_amount = 0.0;
+	bool m_use_global_variable = false;
 private:
 	std::mt19937 m_rnd;
 	double m_osc_phase = 0.0;
+	double m_osc_frequency = 440.0;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EvilPluginAudioProcessor)
 };

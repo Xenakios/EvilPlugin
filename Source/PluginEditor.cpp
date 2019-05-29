@@ -43,6 +43,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 		addAndMakeVisible(but.get());
 		m_buttons.push_back(std::move(but));
 	}
+	
 	auto tog = std::make_unique<ToggleButton>();
 	addAndMakeVisible(tog.get());
 	tog->setButtonText("Lock audio thread mutex");
@@ -53,6 +54,16 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 		m_mutex_thread.m_lock_mutex = togcap->getToggleState();
 	};
 	m_buttons.push_back(std::move(tog));
+	
+	tog = std::make_unique<ToggleButton>();
+	addAndMakeVisible(tog.get());
+	tog->setButtonText("Use global variables (needs multiple plugin instances to break)");
+	tog->onClick = [this, togcap = tog.get()]()
+	{
+		processor.m_use_global_variable = togcap->getToggleState();
+	};
+	m_buttons.push_back(std::move(tog));
+
 	addAndMakeVisible(m_label_waste_gui_cpu);
 	m_label_waste_gui_cpu.setText("Waste CPU in GUI thread",dontSendNotification);
 	addAndMakeVisible(m_label_waste_audio_cpu);
@@ -86,7 +97,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	};
 	m_worker_cpu_waster.startThread();
 	m_devil = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\devil1.png"));
-	setSize (400, 310);
+	setSize (500, 340);
 }
 
 EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()

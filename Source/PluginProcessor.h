@@ -12,19 +12,26 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include <random>
+#include <atomic>
 
-static void CPU_waster(std::mt19937& rng, double durationtowaste)
+static int64_t CPU_waster(std::mt19937& rng, double durationtowaste)
 {
 	std::uniform_real_distribution<double> dist(-1.0, 1.0);
-	volatile double acc = 0.0;
+	std::atomic<double> acc{ 0.0 };
+	int64_t loopcount = 0;
 	double t0 = Time::getMillisecondCounterHiRes();
 	while (true)
 	{
-		acc += dist(rng);
+		double v = dist(rng);
+		double temp = acc.load();
+		temp += v;
+		acc.store(temp);
+		++loopcount;
 		double t1 = Time::getMillisecondCounterHiRes();
 		if (t1 >= t0 + durationtowaste)
 			break;
 	}
+	return loopcount;
 }
 
 //==============================================================================

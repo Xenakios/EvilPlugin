@@ -68,7 +68,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	};
 	
 	addAndMakeVisible(m_slider_waste_audio_cpu);
-	m_slider_waste_audio_cpu.setRange(0.0, 100.0);
+	m_slider_waste_audio_cpu.setRange(0.0, 110.0);
 	m_slider_waste_audio_cpu.setValue(0.0, dontSendNotification);
 	m_slider_waste_audio_cpu.onValueChange = [this]() 
 	{

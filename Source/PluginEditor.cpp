@@ -11,10 +11,12 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-void stackoverflowfunc(int x)
+std::function<void(int)> g_stackoverflowcb;
+
+void stackoverflowfunc1(int x)
 {
 	++x;
-	stackoverflowfunc(x);
+	g_stackoverflowcb(x);
 }
 
 //==============================================================================
@@ -27,7 +29,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	{
 		[]() { float* buf = nullptr; buf[0] = 0.55f; },
 		[]() {},
-		[]() { stackoverflowfunc(0); },
+		[]() { g_stackoverflowcb = stackoverflowfunc1; volatile int x = 0; stackoverflowfunc1(x); },
 		[]() { volatile int x = 0; volatile int y = x / 0; },
 		[]() { Thread::sleep(1000); },
 		[this]() { processor.m_sleep_in_audio_thread=true; },
@@ -83,7 +85,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 		m_worker_cpu_waster.m_amount_to_waste = m_slider_waste_worker_cpu.getValue();
 	};
 	m_worker_cpu_waster.startThread();
-	//m_devil = ImageFileFormat::loadFrom(BinaryData::devil1_png, BinaryData::devil1_pngSize);
+	m_devil = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\devil1.png"));
 	setSize (400, 310);
 }
 

@@ -35,7 +35,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
         {
             m_gui_is_sleeping = true;
             repaint();
-            MessageManager::callAsync([this]()
+            Timer::callAfterDelay(100,[this]()
                                       {
                                           Thread::sleep(5000);
                                           m_gui_is_sleeping = false;
@@ -115,6 +115,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	m_worker_cpu_waster.startThread();
 #ifdef WIN32
     m_devil = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\devil1.png"));
+	m_kitty = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\kitty1.jpg"));
+	jassert(m_kitty.isValid());
 #else
     m_devil = ImageFileFormat::loadFrom(File("/Users/teemu/Downloads/19022019/devil.png"));
     m_kitty = ImageFileFormat::loadFrom(File("/Users/teemu/Downloads/19022019/kitty1.jpg"));

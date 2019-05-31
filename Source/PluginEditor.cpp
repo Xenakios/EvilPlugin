@@ -76,7 +76,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 		[]() { g_stackoverflowcb = stackoverflowfunc1; volatile int x = 0; stackoverflowfunc1(x); },
 		[this]() 
 		{ 
-			m_anim.CurveFunc = identity<double>;
+			//m_anim.CurveFunc = identity<double>;
 			m_anim.start(2.0,[this](Animator::State s,double x) 
 			{
 				m_devil_transparency = x;
@@ -84,7 +84,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 				repaint();
 				if (s == Animator::State::Finished)
 				{
-					volatile int x = 0; volatile int y = x / 0;
+					//volatile int x = 0; volatile int y = x / 0;
 				}
 				
 			});

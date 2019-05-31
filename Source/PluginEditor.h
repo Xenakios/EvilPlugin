@@ -57,6 +57,8 @@ public:
 		{
 			auto pt0 = getPointSafe(curnode);
 			auto pt1 = getPointSafe(curnode + 1);
+			if (pt1.getX() - pt0.getX() < 0.00001)
+				pt1 = {time,pt1.getY()};
 			double v0 = pt0.getY();
 			double v1 = pt1.getY();
 			double deltanorm = jmap(time, pt0.getX(), pt1.getX(), 0.0, 1.0);
@@ -112,9 +114,9 @@ public:
 	EnvelopePoint getPointSafe(int index) const
 	{
 		if (index < 0)
-			return EnvelopePoint{ m_points.front().getX() - 0.01,m_points.front().getY() };
+			return EnvelopePoint{ m_points.front().getX()-0.1,m_points.front().getY() };
 		if (index >= m_points.size())
-			return EnvelopePoint{ m_points.back().getX() + 0.01,m_points.back().getY() };
+			return EnvelopePoint{ m_points.back().getX(),m_points.back().getY() };
 		return m_points[index];
 	}
 	void scaleTimes(double sx)

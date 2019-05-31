@@ -1,38 +1,9 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include <random>
 #include <atomic>
-
-static int64_t CPU_waster(std::mt19937& rng, double durationtowaste)
-{
-	std::uniform_real_distribution<double> dist(-1.0, 1.0);
-	std::atomic<double> acc{ 0.0 };
-	int64_t loopcount = 0;
-	double t0 = Time::getMillisecondCounterHiRes();
-	while (true)
-	{
-		double v = dist(rng);
-		double temp = acc.load();
-		temp += v;
-		acc.store(temp);
-		++loopcount;
-		double t1 = Time::getMillisecondCounterHiRes();
-		if (t1 >= t0 + durationtowaste)
-			break;
-	}
-	return loopcount;
-}
+#include "xen_utilities.h"
 
 //==============================================================================
 /**

@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -263,10 +253,6 @@ void EvilPluginAudioProcessorEditor::timerCallback()
 
 void EvilPluginAudioProcessorEditor::heapTrash()
 {
-	MemoryBlock block;
-	MemoryOutputStream stream{ block,true };
-	File file("foo.wav");
-	stream << file;
 	m_anim.CurveFunc = identity<double>;
 	m_anim.start(5.0, [this](Animator::State s, double x) 
 	{

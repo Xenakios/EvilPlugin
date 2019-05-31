@@ -23,6 +23,13 @@ void stackoverflowfunc1(int x)
 EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p), m_mutex_thread(&p)
 {
+	m_devil_transparency = 0.0;
+	Envelope env{ {0.0,0.0},{0.9,0.0},{1.0,1.0} };
+	m_anim.CurveFunc = [env](double x) 
+	{ 
+		return env.getValueAtTime(x);
+		//return 0.5 + 0.5*cos(2 * 3.141592*x*4.0); 
+	};
 	StringArray buttexts{ "Access violation type 1", "Access violation type 2",
 	"Stack overflow", "Divide by zero","Sleep in GUI thread", "Sleep in audio thread" };
 	std::vector<std::function<void(void)>> callbacks
@@ -30,7 +37,20 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 		[]() { float* buf = nullptr; buf[0] = 0.55f; },
 		[]() {},
 		[]() { g_stackoverflowcb = stackoverflowfunc1; volatile int x = 0; stackoverflowfunc1(x); },
-		[]() { volatile int x = 0; volatile int y = x / 0; },
+		[this]() 
+		{ 
+			m_anim.start(1.0,[this](Animator::State s,double x) 
+			{
+				m_devil_transparency = x;
+				repaint();
+				if (s == Animator::State::Finished)
+				{
+					//volatile int x = 0; volatile int y = x / 0;
+				}
+				return true;
+			});
+			
+		},
 		[this]()
         {
             m_gui_is_sleeping = true;
@@ -136,7 +156,10 @@ void EvilPluginAudioProcessorEditor::paint (Graphics& g)
 {
 	g.fillAll(Colours::black);
 	if (m_devil.isValid() && m_gui_is_sleeping == false)
+	{
+		g.setOpacity(m_devil_transparency);
 		g.drawImageWithin(m_devil, 0, 0, getWidth(), getHeight(), RectanglePlacement::xRight);
+	}
     if (m_kitty.isValid() && m_gui_is_sleeping == true)
     {
         g.addTransform(AffineTransform::scale(-1.0f, 1.0f,getWidth()/2,getHeight()/2));

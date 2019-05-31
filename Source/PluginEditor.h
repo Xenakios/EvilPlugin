@@ -33,9 +33,11 @@ public:
 
 	}
 	Envelope(std::initializer_list<EnvelopePoint> points) : m_points(points) {}
+	// Not super efficient, if performance is really wanted, should implement a separate envelope playback object
+	// that internally keeps track of the current point index etc...
 	double getValueAtTime(double time) const
 	{
-		if (time <= m_points.front().getX())
+		if (time < m_points.front().getX())
 			return m_points.front().getY();
 		if (time >= m_points.back().getX())
 			return m_points.back().getY();
@@ -48,7 +50,8 @@ public:
 		{
 			return m_points.back().getY();
 		}
-		--it; // lower_bound has returned iterator to point one too far
+		if (it!=m_points.begin())
+			--it; // lower_bound has returned iterator to point one too far
 		curnode = std::distance(m_points.begin(), it);
 		if (curnode >= 0)
 		{
@@ -61,6 +64,51 @@ public:
 		}
 		return 0.0;
 	}
+	void applyToBuffer(double* buf, int bufsize, double t0, double t1, Range<double> limitrange = {}) const
+	{
+		int curnode = -1;
+		if (t0 >= m_points.front().getX())
+		{
+			const EnvelopePoint to_search(t0, 0.0);
+			auto it = std::lower_bound(m_points.begin(), m_points.end(), to_search,
+				[](const EnvelopePoint& a, const EnvelopePoint& b)
+			{ return a.getX() < b.getX(); });
+			if (it == m_points.end())
+			{
+				--it;
+			}
+			if (it != m_points.begin())
+				--it; // lower_bound has returned iterator to point one too far
+			curnode = std::distance(m_points.begin(), it);
+		}
+		auto pt0 = getPointSafe(curnode);
+		auto pt1 = getPointSafe(curnode + 1);
+		for (int i = 0; i < bufsize; ++i)
+		{
+			double v0 = pt0.getY();
+			double v1 = pt1.getY();
+			double time = jmap<double>(i,0,bufsize,t0,t1);
+			if (time >= pt1.getX())
+			{
+				++curnode;
+				pt0 = getPointSafe(curnode);
+				pt1 = getPointSafe(curnode + 1);
+				v0 = pt0.getY();
+				v1 = pt1.getY();
+				if (pt1.getX() - pt0.getX() < 0.00001)
+					pt1 = EnvelopePoint{ t1,v1 };
+			}
+			double deltanorm = jmap(time, pt0.getX(), pt1.getX(), 0.0, 1.0);
+			buf[i] = jmap(deltanorm, 0.0, 1.0, v0, v1);
+		}
+		if (limitrange.isEmpty() == false)
+		{
+			for (int i = 0; i < bufsize; ++i)
+			{
+				buf[i] = jlimit(limitrange.getStart(), limitrange.getEnd(), buf[i]);
+			}
+		}
+	}
 	EnvelopePoint getPointSafe(int index) const
 	{
 		if (index < 0)
@@ -68,6 +116,13 @@ public:
 		if (index >= m_points.size())
 			return EnvelopePoint{ m_points.back().getX() + 0.01,m_points.back().getY() };
 		return m_points[index];
+	}
+	void scaleTimes(double sx)
+	{
+		for (auto& e : m_points)
+		{
+			e = { e.getX()*sx,e.getY() };
+		}
 	}
 private:
 	std::vector<EnvelopePoint> m_points;

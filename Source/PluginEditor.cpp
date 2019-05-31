@@ -24,7 +24,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
     : AudioProcessorEditor (&p), processor (p), m_mutex_thread(&p)
 {
 	m_devil_transparency = 0.0;
-	Envelope env{ {0.0,0.0},{0.9,0.0},{1.0,1.0} };
+	Envelope env{ {0.0,0.0},{0.5,1.0},{1.0,0.0} };
 	m_anim.CurveFunc = [env](double x) 
 	{ 
 		return env.getValueAtTime(x);
@@ -35,19 +35,21 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	std::vector<std::function<void(void)>> callbacks
 	{
 		[]() { float* buf = nullptr; buf[0] = 0.55f; },
-		[]() {},
+		[this]() { heapTrash();  },
 		[]() { g_stackoverflowcb = stackoverflowfunc1; volatile int x = 0; stackoverflowfunc1(x); },
 		[this]() 
 		{ 
-			m_anim.start(1.0,[this](Animator::State s,double x) 
+			m_anim.CurveFunc = identity<double>;
+			m_anim.start(2.0,[this](Animator::State s,double x) 
 			{
 				m_devil_transparency = x;
+				//m_kitty_transparency = 1.0 - x;
 				repaint();
 				if (s == Animator::State::Finished)
 				{
-					//volatile int x = 0; volatile int y = x / 0;
+					volatile int x = 0; volatile int y = x / 0;
 				}
-				return true;
+				
 			});
 			
 		},
@@ -155,16 +157,30 @@ EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
 void EvilPluginAudioProcessorEditor::paint (Graphics& g)
 {
 	g.fillAll(Colours::black);
-	if (m_devil.isValid() && m_gui_is_sleeping == false)
+	if (m_devil_transparency > 0.0)
 	{
 		g.setOpacity(m_devil_transparency);
 		g.drawImageWithin(m_devil, 0, 0, getWidth(), getHeight(), RectanglePlacement::xRight);
 	}
-    if (m_kitty.isValid() && m_gui_is_sleeping == true)
-    {
-        g.addTransform(AffineTransform::scale(-1.0f, 1.0f,getWidth()/2,getHeight()/2));
-        g.drawImageWithin(m_kitty, 0, 0, getWidth(), getHeight(), RectanglePlacement::fillDestination);
-    }
+	if (m_kitty_transparency > 0.0)
+	{
+		g.setOpacity(m_kitty_transparency);
+		g.addTransform(AffineTransform::scale(-1.0f, 1.0f, getWidth() / 2, getHeight() / 2));
+		g.drawImageWithin(m_kitty, 0, 0, getWidth(), getHeight(), RectanglePlacement::fillDestination);
+	}
+	if (m_num_noise_points > 0)
+	{
+		std::mt19937 rnd;
+		std::uniform_int<int> distx(0, getWidth());
+		std::uniform_int<int> disty(0, getHeight());
+		g.setColour(Colours::white);
+		for (int i = 0; i < m_num_noise_points; ++i)
+		{
+			int xcor = distx(rnd);
+			int ycor = disty(rnd);
+			g.drawRect(xcor, ycor, 1, 1);
+		}
+	}
 }
 
 void EvilPluginAudioProcessorEditor::resized()
@@ -206,4 +222,16 @@ void EvilPluginAudioProcessorEditor::timerCallback()
 		double timetowaste = (double)getTimerInterval()*percent_to_waste;
 		CPU_waster(m_rnd, timetowaste);
 	}
+}
+
+void EvilPluginAudioProcessorEditor::heapTrash()
+{
+	m_anim.CurveFunc = identity<double>;
+	m_anim.start(5.0, [this](Animator::State s, double x) 
+	{
+		m_num_noise_points = x * 10000;
+		if (s == Animator::State::Finished)
+			m_num_noise_points = 0;
+		repaint();
+	});
 }

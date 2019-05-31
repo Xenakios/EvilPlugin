@@ -73,6 +73,12 @@ private:
 	std::vector<EnvelopePoint> m_points;
 };
 
+template<typename T>
+inline T identity(T x)
+{
+	return x;
+}
+
 class Animator : public Timer
 {
 public:
@@ -82,11 +88,12 @@ public:
 		Running,
 		Finished
 	};
-	Animator()
+	Animator(int updateinterval = 40) : m_update_interval(updateinterval)
 	{
-		CurveFunc = [](double x) { return x; };
+		CurveFunc = identity<double>;
 	}
-	using animfunc = std::function<bool(State, double)>;
+	using animfunc = std::function<void(State, double)>;
+	// CurveFunc is given a value between 0.0-1.0 and must return a value between 0.0-1.0
 	std::function<double(double)> CurveFunc;
 	void timerCallback() override
 	{
@@ -110,7 +117,7 @@ public:
 		m_starttime = Time::getMillisecondCounterHiRes();
 		if (m_cb)
 			m_cb(State::Started, CurveFunc(0.0));
-		startTimer(40);
+		startTimer(m_update_interval);
 	}
 	void stop()
 	{
@@ -122,6 +129,7 @@ private:
 	animfunc m_cb;
 	double m_starttime = 0.0;
 	double m_dur = 0.1;
+	int m_update_interval = 40;
 };
 
 class CPUWasterThread : public Thread
@@ -199,7 +207,7 @@ public:
     void paint (Graphics&) override;
     void resized() override;
 	void timerCallback() override;
-	
+	void heapTrash();
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
@@ -217,7 +225,9 @@ private:
 	Image m_devil;
     Image m_kitty;
     bool m_gui_is_sleeping = false;
-	Animator m_anim;
+	Animator m_anim{ 40 };
 	double m_devil_transparency = 1.0;
+	double m_kitty_transparency = 0.0;
+	int m_num_noise_points = 0;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EvilPluginAudioProcessorEditor)
 };

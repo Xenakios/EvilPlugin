@@ -39,7 +39,7 @@ void writeEnvTestFile()
 		{
 			double t0 = pos / outsr;
 			double t1 = (pos + procbufsize) / outsr;
-			env.applyToBuffer(envbuf.data(), procbufsize, t0-5.0, t1-5.0);
+			env.applyToBuffer(envbuf.data(), procbufsize, t0 - 5.0, t1 - 5.0, { 0.1,0.9 });
 			for (int i = 0; i < buf.getNumSamples(); ++i)
 			{
 				float s = sin(2 * 3.141592 / outsr * (pos+i) *440.0);

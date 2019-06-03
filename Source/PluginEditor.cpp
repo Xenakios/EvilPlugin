@@ -19,21 +19,30 @@ void writeEnvTestFile()
 	AudioFormatWriter* writer = format.createWriterFor(stream, outsr, 1, 32, {}, 0);
 	if (writer)
 	{
-		int procbufsize = 33;
+		int procbufsize = 512;
 		AudioBuffer<float> buf(1, procbufsize);
-		Envelope env{ {0.0,0.0}, {0.75,1.0},{1.0,0.0},{1.5,0.0},{1.6,0.5},{1.7,0.0} };
-		env.scaleTimes(100.0);
+		Envelope env{ 
+			{0.0,0.0}, {0.75,1.0},{1.0,0.0},{1.5,0.0},{1.6,0.5},{1.7,0.0},{1.8,0.0},{1.81,1.0},{1.82,0.0}};
+		/*
+		env.removePointsConditionally([](const EnvelopePoint& a) 
+		{ 
+			return a.getY() >= 0.4 && a.getY() <= 0.6;
+		});
+		*/
+		//env.removePointsConditionally(ValueBetween(0.4, 0.6));
+		env.scaleTimes(10.0);
+		env.scaleAndShiftValues(2.0, -1.0);
 		std::vector<double> envbuf(procbufsize);
 		int pos = 0;
-		while (pos < outsr*200.0)
+		while (pos < outsr*20.0)
 		{
 			double t0 = pos / outsr;
 			double t1 = (pos + procbufsize) / outsr;
-			env.applyToBuffer(envbuf.data(), procbufsize, t0 - 5.0, t1 - 5.0, { 0.1,0.9 });
+			env.applyToBuffer(envbuf.data(), procbufsize, t0 - 0.0, t1 - 0.0);
 			for (int i = 0; i < buf.getNumSamples(); ++i)
 			{
 				float s = sin(2 * 3.141592 / outsr * (pos+i) *440.0);
-				buf.setSample(0, i, s*envbuf[i]);
+				buf.setSample(0, i, envbuf[i]);
 			}
 			writer->writeFromAudioSampleBuffer(buf, 0, procbufsize);
 			pos += procbufsize;
@@ -49,7 +58,8 @@ void writeEnvTestFile()
 EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p), m_mutex_thread(&p)
 {
-	writeEnvTestFile();
+	m_ogl.attachTo(*this);
+	//writeEnvTestFile();
 	m_devil_transparency = 0.0;
 	Envelope env{ {0.0,0.0},{0.5,1.0},{1.0,0.0} };
 	m_anim.CurveFunc = [env](double x) 
@@ -61,7 +71,11 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	"Stack overflow", "Divide by zero","Sleep in GUI thread", "Sleep in audio thread" };
 	std::vector<std::function<void(void)>> callbacks
 	{
-		[]() { float* buf = nullptr; buf[0] = 0.55f; },
+		[this]() 
+		{ 
+			accessViolation1();
+			
+		},
 		[this]() { heapTrash();  },
 		[]() { g_stackoverflowcb = stackoverflowfunc1; volatile int x = 0; stackoverflowfunc1(x); },
 		[this]() 
@@ -178,6 +192,7 @@ EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
 {
 	m_mutex_thread.stopThread(1000);
 	m_worker_cpu_waster.stopThread(1000);
+	m_ogl.detach();
 }
 
 //==============================================================================
@@ -187,7 +202,7 @@ void EvilPluginAudioProcessorEditor::paint (Graphics& g)
 	if (m_devil_transparency > 0.0)
 	{
 		g.setOpacity(m_devil_transparency);
-		g.drawImageWithin(m_devil, 0, 0, getWidth(), getHeight(), RectanglePlacement::xRight);
+		g.drawImageWithin(m_devil, m_devil_x_offset, 0, getWidth(), getHeight(), RectanglePlacement::xRight);
 	}
 	if (m_kitty_transparency > 0.0)
 	{
@@ -261,4 +276,24 @@ void EvilPluginAudioProcessorEditor::heapTrash()
 			m_num_noise_points = 0;
 		repaint();
 	});
+}
+
+void EvilPluginAudioProcessorEditor::accessViolation1()
+{
+	m_anim.CurveFunc = identity<double>; 
+	m_devil_transparency = 1.0f;
+	Envelope env{ {0.0,0.0},{0.75,100.0},{1.0,100.0} };
+	m_anim.start(5.0, [this,env](Animator::State s, double prog)
+	{
+		double amt = env.getValueAtTime(prog);
+		double sine = 0.5 + 0.5*sin(2 * 3.141592*prog*32.0);
+		m_devil_x_offset = -(amt/2.0) + amt*sine;
+		repaint();
+		if (s == Animator::State::Finished)
+		{
+			m_devil_x_offset = 0.0;
+			//
+		}
+	});
+	
 }

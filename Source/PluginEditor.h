@@ -159,9 +159,12 @@ private:
 	Image m_devil;
     Image m_kitty;
     bool m_gui_is_sleeping = false;
-	Animator m_anim{ 40 };
+	Animator m_anim{ 25 };
 	double m_devil_transparency = 1.0;
+	double m_devil_x_offset = 0.0;
 	double m_kitty_transparency = 0.0;
 	int m_num_noise_points = 0;
+	void accessViolation1();
+	OpenGLContext m_ogl;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EvilPluginAudioProcessorEditor)
 };

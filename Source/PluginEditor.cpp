@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+
 std::function<void(int)> g_stackoverflowcb;
 
 void stackoverflowfunc1(int x)
@@ -59,6 +60,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
     : AudioProcessorEditor (&p), processor (p), m_mutex_thread(&p)
 {
 	m_ogl.attachTo(*this);
+	
 	//writeEnvTestFile();
 	m_devil_transparency = 0.0;
 	Envelope env{ {0.0,0.0},{0.5,1.0},{1.0,0.0} };
@@ -152,8 +154,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	m_slider_waste_gui_cpu.onValueChange = [this]() 
 	{
 		if (m_slider_waste_gui_cpu.getValue() > 0.0)
-			startTimer(100);
-		else stopTimer();
+			startTimer(0,100);
+		else stopTimer(0);
 	};
 	
 	addAndMakeVisible(m_slider_waste_audio_cpu);
@@ -185,6 +187,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
     m_kitty = ImageFileFormat::loadFrom(File("/Users/teemu/Downloads/19022019/kitty1.jpg"));
     
 #endif
+	//addAndMakeVisible(m_thcomp);
 	setSize (500, 340);
 }
 
@@ -227,6 +230,7 @@ void EvilPluginAudioProcessorEditor::paint (Graphics& g)
 
 void EvilPluginAudioProcessorEditor::resized()
 {
+	//m_thcomp.setBounds(getWidth()-200, 0, 200, getHeight());
 	for (int i = 0; i < m_buttons.size(); ++i)
 	{
 		m_buttons[i]->setBounds(1, 1 + 30 * i, 100, 29);
@@ -256,13 +260,20 @@ void EvilPluginAudioProcessorEditor::resized()
 
 }
 
-void EvilPluginAudioProcessorEditor::timerCallback()
+void EvilPluginAudioProcessorEditor::timerCallback(int id)
 {
-	double percent_to_waste = m_slider_waste_gui_cpu.getValue()/100.0;
-	if (percent_to_waste > 0.0)
+	if (id == 0)
 	{
-		double timetowaste = (double)getTimerInterval()*percent_to_waste;
-		CPU_waster(m_rnd, timetowaste);
+		double percent_to_waste = m_slider_waste_gui_cpu.getValue() / 100.0;
+		if (percent_to_waste > 0.0)
+		{
+			double timetowaste = (double)getTimerInterval(0)*percent_to_waste;
+			CPU_waster(m_rnd, timetowaste);
+		}
+	}
+	if (id == 1)
+	{
+
 	}
 }
 
@@ -292,8 +303,79 @@ void EvilPluginAudioProcessorEditor::accessViolation1()
 		if (s == Animator::State::Finished)
 		{
 			m_devil_x_offset = 0.0;
-			//
+			int* ptr = nullptr;
+			(*ptr)++;
 		}
 	});
 	
+}
+
+void ThreadInfoComponent::paint(Graphics & g)
+{
+	auto curprocid = GetCurrentProcessId();
+	ULONG64 proc_cycle;
+	if (QueryProcessCycleTime(GetCurrentProcess(), &proc_cycle) == 0)
+		return;
+	LARGE_INTEGER cpu_freq;
+	QueryPerformanceFrequency(&cpu_freq);
+	LARGE_INTEGER cpu_cycle;
+	QueryPerformanceCounter(&cpu_cycle);
+	double cpu_cycle_delta = cpu_cycle.QuadPart - m_last_CPU_cycle_time.QuadPart;
+	double proc_cycle_delta = proc_cycle - m_last_process_cycle_time;
+	double proc_cpu_use = proc_cycle_delta / (double)cpu_freq.QuadPart*(cpu_cycle_delta);
+	
+	proc_cpu_use /= 10000000.0;
+	
+	m_last_process_cycle_time = proc_cycle;
+	m_last_CPU_cycle_time.QuadPart = cpu_cycle.QuadPart;
+	g.fillAll(Colours::black);
+	g.setColour(Colours::white);
+	g.setFont(12.0f);
+	double t0 = Time::getMillisecondCounterHiRes();
+	HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	
+	int yoffs = 0;
+	if (h != INVALID_HANDLE_VALUE) {
+		THREADENTRY32 te;
+		te.dwSize = sizeof(te);
+		if (Thread32First(h, &te)) {
+			do {
+				if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) +
+					sizeof(te.th32OwnerProcessID)) 
+				{
+					if (te.th32OwnerProcessID == curprocid)
+					{
+						auto thread_handle = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
+						if (thread_handle != NULL)
+						{
+							ULONG64 thcycletime = 0;
+							BOOL b = QueryThreadCycleTime(thread_handle, &thcycletime);
+							if (b && m_last_thread_cycles.count(thread_handle))
+							{
+								ULONG64 lastthreadcycles = m_last_thread_cycles[thread_handle];
+								double thread_cpu_use = (100.0 / cpu_cycle_delta * (thcycletime - lastthreadcycles)) / 10000.0;
+								if (thread_cpu_use < 0.01)
+									thread_cpu_use = 0.0;
+								String txt = String((int)te.th32OwnerProcessID) + " " + String((int)te.th32ThreadID);
+								txt += " " + String(te.tpBasePri); // +" " + String(thcycletime);
+								txt += " " + String(thread_cpu_use, 2, false);
+								g.drawText(txt, 0, yoffs, getWidth(), 12, Justification::left);
+								yoffs += 13;
+							}
+							if (b)
+								m_last_thread_cycles[thread_handle] = thcycletime;
+							CloseHandle(thread_handle);
+						}
+					}
+				}
+				te.dwSize = sizeof(te);
+			} while (Thread32Next(h, &te));
+		}
+		CloseHandle(h);
+	}
+	yoffs += 5;
+	double t1 = Time::getMillisecondCounterHiRes();
+	g.drawText("Getting analytics took " + String(t1 - t0, 1) + " ms", 0, yoffs, getWidth(), 12, Justification::left);
+	yoffs += 13;
+	g.drawText("Process CPU use : " + String(proc_cpu_use, 2), 0, yoffs, getWidth(), 12, Justification::left);
 }

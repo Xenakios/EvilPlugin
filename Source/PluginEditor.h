@@ -13,6 +13,13 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
 
+#ifdef JUCE_WINDOWS
+#include "windows.h"
+#include <tlhelp32.h>
+#endif
+
+#include <map>
+
 class Animator : public Timer
 {
 public:
@@ -128,10 +135,28 @@ private:
 	EvilPluginAudioProcessor* m_proc = nullptr;
 };
 
-//==============================================================================
-/**
-*/
-class EvilPluginAudioProcessorEditor  : public AudioProcessorEditor, public Timer
+
+class ThreadInfoComponent : public Component, public Timer
+{
+public:
+	ThreadInfoComponent()
+	{
+		QueryPerformanceCounter(&m_last_CPU_cycle_time);
+		QueryProcessCycleTime(GetCurrentProcess(),&m_last_process_cycle_time);
+		startTimer(2000);
+	}
+	void timerCallback() override
+	{
+		repaint();
+	}
+	void paint(Graphics& g) override;
+private:
+	ULONG64 m_last_process_cycle_time = 0;
+	LARGE_INTEGER m_last_CPU_cycle_time;
+	std::map<HANDLE, ULONG64> m_last_thread_cycles;
+};
+
+class EvilPluginAudioProcessorEditor  : public AudioProcessorEditor, public MultiTimer
 {
 public:
     EvilPluginAudioProcessorEditor (EvilPluginAudioProcessor&);
@@ -140,7 +165,7 @@ public:
     //==============================================================================
     void paint (Graphics&) override;
     void resized() override;
-	void timerCallback() override;
+	void timerCallback(int id) override;
 	void heapTrash();
 private:
     // This reference is provided as a quick way for your editor to
@@ -166,5 +191,6 @@ private:
 	int m_num_noise_points = 0;
 	void accessViolation1();
 	OpenGLContext m_ogl;
+	//ThreadInfoComponent m_thcomp;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EvilPluginAudioProcessorEditor)
 };

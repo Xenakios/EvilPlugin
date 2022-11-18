@@ -9,7 +9,7 @@ void stackoverflowfunc1(int x)
 	++x;
 	g_stackoverflowcb(x);
 }
-
+#ifdef FOOFAA
 void writeEnvTestFile()
 {
 	WavAudioFormat format;
@@ -54,6 +54,7 @@ void writeEnvTestFile()
 	else
 		delete stream;
 }
+#endif
 
 //==============================================================================
 EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioProcessor& p)
@@ -179,8 +180,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor (EvilPluginAudioP
 	};
 	m_worker_cpu_waster.startThread();
 #ifdef WIN32
-    m_devil = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\devil1.png"));
-	m_kitty = ImageFileFormat::loadFrom(File("C:\\NetDownloads\\03042019\\kitty1.jpg"));
+    m_devil = ImageFileFormat::loadFrom(File("C:\\develop\\EvilPlugin\\devil1.png"));
+	m_kitty = ImageFileFormat::loadFrom(File("C:\\develop\\EvilPlugin\\kitty1.jpg"));
 	jassert(m_kitty.isValid());
 #else
     m_devil = ImageFileFormat::loadFrom(File("/Users/teemu/Downloads/19022019/devil.png"));

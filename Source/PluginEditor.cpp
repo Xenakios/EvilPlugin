@@ -167,7 +167,7 @@ EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
 }
 
 //==============================================================================
-void EvilPluginAudioProcessorEditor::paint(Graphics &g) { g.fillAll(Colours::black); }
+void EvilPluginAudioProcessorEditor::paint(Graphics &g) { g.fillAll(Colours::red.darker()); }
 
 void EvilPluginAudioProcessorEditor::resized()
 {
@@ -223,80 +223,4 @@ void EvilPluginAudioProcessorEditor::accessViolation1()
     (*ptr)++;
 }
 
-void ThreadInfoComponent::paint(Graphics &g)
-{
-    auto curprocid = GetCurrentProcessId();
-    ULONG64 proc_cycle;
-    if (QueryProcessCycleTime(GetCurrentProcess(), &proc_cycle) == 0)
-        return;
-    LARGE_INTEGER cpu_freq;
-    QueryPerformanceFrequency(&cpu_freq);
-    LARGE_INTEGER cpu_cycle;
-    QueryPerformanceCounter(&cpu_cycle);
-    double cpu_cycle_delta = cpu_cycle.QuadPart - m_last_CPU_cycle_time.QuadPart;
-    double proc_cycle_delta = proc_cycle - m_last_process_cycle_time;
-    double proc_cpu_use = proc_cycle_delta / (double)cpu_freq.QuadPart * (cpu_cycle_delta);
 
-    proc_cpu_use /= 10000000.0;
-
-    m_last_process_cycle_time = proc_cycle;
-    m_last_CPU_cycle_time.QuadPart = cpu_cycle.QuadPart;
-    g.fillAll(Colours::black);
-    g.setColour(Colours::white);
-    g.setFont(12.0f);
-    double t0 = Time::getMillisecondCounterHiRes();
-    HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-
-    int yoffs = 0;
-    if (h != INVALID_HANDLE_VALUE)
-    {
-        THREADENTRY32 te;
-        te.dwSize = sizeof(te);
-        if (Thread32First(h, &te))
-        {
-            do
-            {
-                if (te.dwSize >=
-                    FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID))
-                {
-                    if (te.th32OwnerProcessID == curprocid)
-                    {
-                        auto thread_handle = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
-                        if (thread_handle != NULL)
-                        {
-                            ULONG64 thcycletime = 0;
-                            BOOL b = QueryThreadCycleTime(thread_handle, &thcycletime);
-                            if (b && m_last_thread_cycles.count(thread_handle))
-                            {
-                                ULONG64 lastthreadcycles = m_last_thread_cycles[thread_handle];
-                                double thread_cpu_use =
-                                    (100.0 / cpu_cycle_delta * (thcycletime - lastthreadcycles)) /
-                                    10000.0;
-                                if (thread_cpu_use < 0.01)
-                                    thread_cpu_use = 0.0;
-                                String txt = String((int)te.th32OwnerProcessID) + " " +
-                                             String((int)te.th32ThreadID);
-                                txt += " " + String(te.tpBasePri); // +" " + String(thcycletime);
-                                txt += " " + String(thread_cpu_use, 2, false);
-                                g.drawText(txt, 0, yoffs, getWidth(), 12, Justification::left);
-                                yoffs += 13;
-                            }
-                            if (b)
-                                m_last_thread_cycles[thread_handle] = thcycletime;
-                            CloseHandle(thread_handle);
-                        }
-                    }
-                }
-                te.dwSize = sizeof(te);
-            } while (Thread32Next(h, &te));
-        }
-        CloseHandle(h);
-    }
-    yoffs += 5;
-    double t1 = Time::getMillisecondCounterHiRes();
-    g.drawText("Getting analytics took " + String(t1 - t0, 1) + " ms", 0, yoffs, getWidth(), 12,
-               Justification::left);
-    yoffs += 13;
-    g.drawText("Process CPU use : " + String(proc_cpu_use, 2), 0, yoffs, getWidth(), 12,
-               Justification::left);
-}

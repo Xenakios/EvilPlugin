@@ -13,11 +13,6 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
 
-#ifdef JUCE_WINDOWS
-#include "windows.h"
-#include <tlhelp32.h>
-#endif
-
 #include <map>
 
 class Animator : public Timer
@@ -136,24 +131,6 @@ class MutexLockerThread : public Thread
 
   private:
     EvilPluginAudioProcessor *m_proc = nullptr;
-};
-
-class ThreadInfoComponent : public Component, public Timer
-{
-  public:
-    ThreadInfoComponent()
-    {
-        QueryPerformanceCounter(&m_last_CPU_cycle_time);
-        QueryProcessCycleTime(GetCurrentProcess(), &m_last_process_cycle_time);
-        startTimer(2000);
-    }
-    void timerCallback() override { repaint(); }
-    void paint(Graphics &g) override;
-
-  private:
-    ULONG64 m_last_process_cycle_time = 0;
-    LARGE_INTEGER m_last_CPU_cycle_time;
-    std::map<HANDLE, ULONG64> m_last_thread_cycles;
 };
 
 class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public MultiTimer

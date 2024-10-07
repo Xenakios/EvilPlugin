@@ -22,6 +22,7 @@ struct ThreadMessage
         WasteCPU,
         UseGlobalVariable,
         LeakMemory,
+        BadSampleValue,
         MixInputAudio
     };
     Opcode opcode = Opcode::None;

@@ -7,8 +7,9 @@ such as :
 - Locking up by making threads sleep or waiting for mutexes
 - Using too much CPU in the GUI thread, the audio thread or a worker thread started by the plugin
 - Using global variables in an inappropriate way to cause problems when multiple instances of the plugin
-  is used in a multithreading host
+  are used
 - Division by zero
+- Inject nans and infs into the plugin audio output
 - Leak memory (also in audio thread)
 
 It could be useful for amusement purposes or

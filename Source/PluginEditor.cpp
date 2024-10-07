@@ -10,7 +10,6 @@ void stackoverflowfunc1(int x)
     g_stackoverflowcb(x);
 }
 
-//==============================================================================
 EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioProcessor &p)
     : AudioProcessorEditor(&p), processor(p), m_mutex_thread(&p)
 {
@@ -23,7 +22,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
                          "Sleep in GUI thread",
                          "Sleep in audio thread",
                          "Leak 100MB memory in GUI thread",
-                         "Leak 100MB memory in audio thread"};
+                         "Leak 100MB memory in audio thread",
+                         "Inject bad output sample value (can be loud!)"};
     std::vector<std::function<void(void)>> callbacks{
         [this]() { accessViolation1(); },
         [this]() { heapTrash(); },
@@ -54,6 +54,9 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
         [this]() {
             processor.m_to_audio_fifo.push(
                 {ThreadMessage::Opcode::LeakMemory, 100 * 1024 * 1024, 0.0});
+        },
+        [this]() {
+            processor.m_to_audio_fifo.push({ThreadMessage::Opcode::BadSampleValue, 1, 0.0});
         }};
     jassert(callbacks.size() == buttexts.size());
     for (int i = 0; i < buttexts.size(); ++i)
@@ -134,7 +137,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     };
     m_worker_cpu_waster.startThread();
 
-    setSize(500, 415);
+    setSize(500, 450);
 }
 
 EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
@@ -143,7 +146,6 @@ EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
     m_worker_cpu_waster.stopThread(1000);
 }
 
-//==============================================================================
 void EvilPluginAudioProcessorEditor::paint(Graphics &g) { g.fillAll(Colours::red.darker()); }
 
 void EvilPluginAudioProcessorEditor::resized()
@@ -200,7 +202,7 @@ void EvilPluginAudioProcessorEditor::timerCallback(int id)
             {
                 m_useGlobalsButton->setToggleState(msg.i0, juce::dontSendNotification);
             }
-		}
+        }
     }
 }
 

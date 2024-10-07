@@ -99,7 +99,7 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
-
+    int badSample = 0;
     ThreadMessage msg;
     using OC = ThreadMessage::Opcode;
     while (m_to_audio_fifo.pop(msg))
@@ -130,6 +130,10 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
             else
                 m_mixInputAudio = false;
         }
+        if (msg.opcode == OC::BadSampleValue)
+        {
+            badSample = msg.i0;
+        }
     }
     if (m_cpu_waste_amount > 0.0)
     {
@@ -158,13 +162,15 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
         }
         (*oscphasevariable) += 1.0;
     }
+    if (badSample == 1)
+    {
+        bufptrs[0][0] = std::numeric_limits<float>::quiet_NaN();
+        bufptrs[1][buffer.getNumSamples() - 1] = std::numeric_limits<float>::quiet_NaN();
+    }
 }
 
 //==============================================================================
-bool EvilPluginAudioProcessor::hasEditor() const
-{
-    return true; // (change this to false if you choose to not supply an editor)
-}
+bool EvilPluginAudioProcessor::hasEditor() const { return true; }
 
 void EvilPluginAudioProcessor::pushStateToGUI()
 {
@@ -193,6 +199,4 @@ void EvilPluginAudioProcessor::setStateInformation(const void *data, int sizeInB
     // whose contents will have been created by the getStateInformation() call.
 }
 
-//==============================================================================
-// This creates new instances of the plugin..
 AudioProcessor *JUCE_CALLTYPE createPluginFilter() { return new EvilPluginAudioProcessor(); }

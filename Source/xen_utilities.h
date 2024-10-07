@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../JuceLibraryCode/JuceHeader.h"
 #include <algorithm>
+#include <random>
 
 template<typename Cont, typename F>
 inline void erase(Cont& c, F f)

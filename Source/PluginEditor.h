@@ -126,8 +126,8 @@ class MutexLockerThread : public Thread
             Thread::yield();
         }
     }
-    bool m_lock_mutex = false;
-    bool m_mutex_is_locked = false;
+    std::atomic<bool> m_lock_mutex = false;
+    std::atomic<bool> m_mutex_is_locked = false;
 
   private:
     EvilPluginAudioProcessor *m_proc = nullptr;

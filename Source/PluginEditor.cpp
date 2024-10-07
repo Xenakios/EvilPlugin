@@ -8,52 +8,6 @@ void stackoverflowfunc1(int x)
     ++x;
     g_stackoverflowcb(x);
 }
-#ifdef FOOFAA
-void writeEnvTestFile()
-{
-    WavAudioFormat format;
-    File outfile("C:\\MusicAudio\\sourcesamples\\test_signals\\bkenv\\out1.wav");
-    outfile.deleteFile();
-    double outsr = 44100.0;
-    FileOutputStream *stream = outfile.createOutputStream();
-    AudioFormatWriter *writer = format.createWriterFor(stream, outsr, 1, 32, {}, 0);
-    if (writer)
-    {
-        int procbufsize = 512;
-        AudioBuffer<float> buf(1, procbufsize);
-        Envelope env{{0.0, 0.0}, {0.75, 1.0}, {1.0, 0.0},  {1.5, 0.0}, {1.6, 0.5},
-                     {1.7, 0.0}, {1.8, 0.0},  {1.81, 1.0}, {1.82, 0.0}};
-        /*
-        env.removePointsConditionally([](const EnvelopePoint& a)
-        {
-                return a.getY() >= 0.4 && a.getY() <= 0.6;
-        });
-        */
-        // env.removePointsConditionally(ValueBetween(0.4, 0.6));
-        env.scaleTimes(10.0);
-        env.scaleAndShiftValues(2.0, -1.0);
-        std::vector<double> envbuf(procbufsize);
-        int pos = 0;
-        while (pos < outsr * 20.0)
-        {
-            double t0 = pos / outsr;
-            double t1 = (pos + procbufsize) / outsr;
-            env.applyToBuffer(envbuf.data(), procbufsize, t0 - 0.0, t1 - 0.0);
-            for (int i = 0; i < buf.getNumSamples(); ++i)
-            {
-                float s = sin(2 * 3.141592 / outsr * (pos + i) * 440.0);
-                buf.setSample(0, i, envbuf[i]);
-            }
-            writer->writeFromAudioSampleBuffer(buf, 0, procbufsize);
-            pos += procbufsize;
-        }
-
-        delete writer;
-    }
-    else
-        delete stream;
-}
-#endif
 
 //==============================================================================
 EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioProcessor &p)

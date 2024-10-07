@@ -121,7 +121,6 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     };
     m_worker_cpu_waster.startThread();
 
-    // addAndMakeVisible(m_thcomp);
     setSize(500, 390);
 }
 
@@ -136,7 +135,6 @@ void EvilPluginAudioProcessorEditor::paint(Graphics &g) { g.fillAll(Colours::red
 
 void EvilPluginAudioProcessorEditor::resized()
 {
-    // m_thcomp.setBounds(getWidth()-200, 0, 200, getHeight());
     for (int i = 0; i < m_buttons.size(); ++i)
     {
         m_buttons[i]->setBounds(1, 1 + 30 * i, 100, 29);

@@ -9,7 +9,7 @@ such as :
 - Using global variables in an inappropriate way to cause problems when multiple instances of the plugin
   is used in a multithreading host
 - Division by zero
-- Leak memory
+- Leak memory (also in audio thread)
 
 It could be useful for amusement purposes or
 for testing things like hosts that can host plugins in external processes to see how they handle the 

@@ -13,7 +13,6 @@ inline void leakMemory(size_t bytes)
     memset(ptr, 63, bytes);
 }
 
-
 struct ThreadMessage
 {
     enum class Opcode

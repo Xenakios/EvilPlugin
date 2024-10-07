@@ -15,9 +15,14 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
 {
     // writeEnvTestFile();
 
-    StringArray buttexts{"Access violation type 1", "Access violation type 2",
-                         "Stack overflow",          "Divide by zero",
-                         "Sleep in GUI thread",     "Sleep in audio thread"};
+    StringArray buttexts{"Access violation type 1",
+                         "Access violation type 2",
+                         "Stack overflow",
+                         "Divide by zero",
+                         "Sleep in GUI thread",
+                         "Sleep in audio thread",
+                         "Leak 100MB memory in GUI thread",
+                         "Leak 100MB memory in audio thread"};
     std::vector<std::function<void(void)>> callbacks{
         [this]() { accessViolation1(); },
         [this]() { heapTrash(); },
@@ -44,7 +49,11 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
             });
         },
         [this]() { processor.m_to_audio_fifo.push({ThreadMessage::Opcode::Sleep, 0, 0}); },
-    };
+        [this]() { leakMemory(100 * 1024 * 1024); },
+        [this]() {
+            processor.m_to_audio_fifo.push(
+                {ThreadMessage::Opcode::LeakMemory, 100 * 1024 * 1024, 0.0});
+        }};
     jassert(callbacks.size() == buttexts.size());
     for (int i = 0; i < buttexts.size(); ++i)
     {
@@ -113,7 +122,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     m_worker_cpu_waster.startThread();
 
     // addAndMakeVisible(m_thcomp);
-    setSize(500, 340);
+    setSize(500, 390);
 }
 
 EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()

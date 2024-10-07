@@ -114,6 +114,10 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
             else
                 m_use_global_variable = true;
         }
+        if (msg.opcode == OC::LeakMemory)
+        {
+            leakMemory(msg.i0);
+        }
     }
     if (m_cpu_waste_amount > 0.0)
     {

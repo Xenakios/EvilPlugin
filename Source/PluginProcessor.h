@@ -6,6 +6,14 @@
 #include "xen_utilities.h"
 #include "containers/choc_SingleReaderSingleWriterFIFO.h"
 
+inline void leakMemory(size_t bytes)
+{
+    unsigned char *ptr = new unsigned char[bytes];
+    // might even want to fill with random bytes...
+    memset(ptr, 63, bytes);
+}
+
+
 struct ThreadMessage
 {
     enum class Opcode
@@ -14,6 +22,7 @@ struct ThreadMessage
         Sleep,
         WasteCPU,
         UseGlobalVariable,
+        LeakMemory
     };
     Opcode opcode = Opcode::None;
     int i0 = 0;

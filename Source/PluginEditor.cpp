@@ -139,7 +139,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
         m_worker_cpu_waster.m_amount_to_waste = m_slider_waste_worker_cpu.getValue();
     };
     m_worker_cpu_waster.startThread();
-    addAndMakeVisible(m_labelTimePos);
+    addAndMakeVisible(m_timeposComponent);
+    m_timeposComponent.setMaxTimePosition(4.0);
     setSize(500, 450);
 }
 
@@ -178,7 +179,7 @@ void EvilPluginAudioProcessorEditor::resized()
     yoffs = m_slider_waste_audio_cpu.getBottom() + 1;
     m_label_waste_worker_cpu.setBounds(1, yoffs, 200, 29);
     m_slider_waste_worker_cpu.setBounds(m_label_waste_audio_cpu.getRight(), yoffs, 200, 29);
-    m_labelTimePos.setBounds(getRight() - 100, 1, 99, 25);
+    m_timeposComponent.setBounds(getRight() - 150, 1, 149, 20);
 }
 
 void EvilPluginAudioProcessorEditor::timerCallback(int id)
@@ -208,11 +209,10 @@ void EvilPluginAudioProcessorEditor::timerCallback(int id)
             }
             if (msg.opcode == OC::TimePosition)
             {
-                m_timepos_seconds = msg.v0;
+                m_timepos_seconds = std::fmod(msg.v0,4.0);
             }
         }
-        juce::String txt{m_timepos_seconds, 1};
-        m_labelTimePos.setText(txt, juce::dontSendNotification);
+        m_timeposComponent.setCurrentPos(m_timepos_seconds);
     }
 }
 

@@ -156,6 +156,6 @@ class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public Multi
     int m_num_noise_points = 0;
     double m_timepos_seconds = 0.0;
     void accessViolation1();
-
+    size_t m_memLeakAmount = 100 * 1024 * 1024;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EvilPluginAudioProcessorEditor)
 };

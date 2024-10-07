@@ -44,16 +44,16 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
             m_gui_is_sleeping = true;
             repaint();
             Timer::callAfterDelay(100, [this]() {
-                Thread::sleep(5000);
+                Thread::sleep(2000);
                 m_gui_is_sleeping = false;
                 repaint();
             });
         },
         [this]() { processor.m_to_audio_fifo.push({ThreadMessage::Opcode::Sleep, 0, 0}); },
-        [this]() { leakMemory(100 * 1024 * 1024); },
+        [this]() { leakMemory(m_memLeakAmount); },
         [this]() {
             processor.m_to_audio_fifo.push(
-                {ThreadMessage::Opcode::LeakMemory, 100 * 1024 * 1024, 0.0});
+                {ThreadMessage::Opcode::LeakMemory, static_cast<int>(m_memLeakAmount), 0.0});
         },
         [this]() {
             processor.m_to_audio_fifo.push({ThreadMessage::Opcode::BadSampleValue, 1, 0.0});
@@ -209,7 +209,7 @@ void EvilPluginAudioProcessorEditor::timerCallback(int id)
             }
             if (msg.opcode == OC::TimePosition)
             {
-                m_timepos_seconds = std::fmod(msg.v0,4.0);
+                m_timepos_seconds = std::fmod(msg.v0, 4.0);
             }
         }
         m_timeposComponent.setCurrentPos(m_timepos_seconds);

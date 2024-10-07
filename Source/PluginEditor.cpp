@@ -74,7 +74,10 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     tog->onClick = [this, togcap = tog.get()]() {
         if (m_mutex_thread.isThreadRunning() == false)
             m_mutex_thread.startThread();
-        m_mutex_thread.m_lock_mutex = togcap->getToggleState();
+        if (togcap->getToggleState())
+            m_mutex_thread.m_msg_fifo.push({MutexLockerThread::Message::Opcode::LockMutex});
+        else
+            m_mutex_thread.m_msg_fifo.push({MutexLockerThread::Message::Opcode::UnlockMutex});
     };
     m_lockAudioMutexButton = tog.get();
     m_buttons.push_back(std::move(tog));

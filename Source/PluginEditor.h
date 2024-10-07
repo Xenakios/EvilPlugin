@@ -12,6 +12,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
+#include "containers/choc_SingleReaderSingleWriterFIFO.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
 #include <map>
@@ -48,6 +49,7 @@ class MutexLockerThread : public Thread
     MutexLockerThread(EvilPluginAudioProcessor *proc)
         : Thread("EvilPluginMutexLockerThread"), m_proc(proc)
     {
+        m_msg_fifo.reset(64);
     }
     ~MutexLockerThread()
     {
@@ -60,24 +62,45 @@ class MutexLockerThread : public Thread
         {
             if (threadShouldExit() == true)
                 break;
-            if (m_lock_mutex == true && m_mutex_is_locked == false)
+            Message msg;
+            while (m_msg_fifo.pop(msg))
             {
-                m_mutex_is_locked = true;
-                m_proc->m_cs.enter();
-            }
-            if (m_mutex_is_locked == true && m_lock_mutex == false)
-            {
-                m_mutex_is_locked = false;
-                m_proc->m_cs.exit();
+                if (msg.opcode == Message::Opcode::LockMutex)
+                {
+                    if (!m_mutex_is_locked)
+                    {
+                        m_mutex_is_locked = true;
+                        m_proc->m_cs.enter();
+                    }
+                }
+                if (msg.opcode == Message::Opcode::UnlockMutex)
+                {
+                    if (m_mutex_is_locked)
+                    {
+                        m_mutex_is_locked = false;
+                        m_proc->m_cs.exit();
+                    }
+                }
             }
             Thread::yield();
         }
     }
-    std::atomic<bool> m_lock_mutex = false;
-    std::atomic<bool> m_mutex_is_locked = false;
+
+    struct Message
+    {
+        enum class Opcode
+        {
+            None,
+            LockMutex,
+            UnlockMutex
+        };
+        Opcode opcode = Opcode::None;
+    };
+    choc::fifo::SingleReaderSingleWriterFIFO<Message> m_msg_fifo;
 
   private:
     EvilPluginAudioProcessor *m_proc = nullptr;
+    std::atomic<bool> m_mutex_is_locked = false;
 };
 
 class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public MultiTimer
@@ -95,10 +118,10 @@ class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public Multi
   private:
     EvilPluginAudioProcessor &processor;
     std::vector<std::unique_ptr<Button>> m_buttons;
-    ToggleButton* m_mixinputButton = nullptr;
-	ToggleButton* m_useGlobalsButton = nullptr;
-	ToggleButton* m_lockAudioMutexButton = nullptr;
-	Label m_label_waste_gui_cpu;
+    ToggleButton *m_mixinputButton = nullptr;
+    ToggleButton *m_useGlobalsButton = nullptr;
+    ToggleButton *m_lockAudioMutexButton = nullptr;
+    Label m_label_waste_gui_cpu;
     Label m_label_waste_audio_cpu;
     Label m_label_waste_worker_cpu;
     Slider m_slider_waste_gui_cpu;

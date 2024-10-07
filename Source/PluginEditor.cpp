@@ -121,7 +121,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     };
     startTimer(1, 20);
     addAndMakeVisible(m_slider_waste_audio_cpu);
-    m_slider_waste_audio_cpu.setRange(0.0, 110.0);
+    m_slider_waste_audio_cpu.setRange(0.0, 200.0);
     m_slider_waste_audio_cpu.setValue(0.0, dontSendNotification);
     m_slider_waste_audio_cpu.setNumDecimalPlacesToDisplay(2);
     m_slider_waste_audio_cpu.setTextValueSuffix(" %");

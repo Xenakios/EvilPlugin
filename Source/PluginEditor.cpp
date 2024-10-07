@@ -139,7 +139,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
         m_worker_cpu_waster.m_amount_to_waste = m_slider_waste_worker_cpu.getValue();
     };
     m_worker_cpu_waster.startThread();
-
+    addAndMakeVisible(m_labelTimePos);
     setSize(500, 450);
 }
 
@@ -178,6 +178,7 @@ void EvilPluginAudioProcessorEditor::resized()
     yoffs = m_slider_waste_audio_cpu.getBottom() + 1;
     m_label_waste_worker_cpu.setBounds(1, yoffs, 200, 29);
     m_slider_waste_worker_cpu.setBounds(m_label_waste_audio_cpu.getRight(), yoffs, 200, 29);
+    m_labelTimePos.setBounds(getRight() - 100, 1, 99, 25);
 }
 
 void EvilPluginAudioProcessorEditor::timerCallback(int id)
@@ -205,7 +206,13 @@ void EvilPluginAudioProcessorEditor::timerCallback(int id)
             {
                 m_useGlobalsButton->setToggleState(msg.i0, juce::dontSendNotification);
             }
+            if (msg.opcode == OC::TimePosition)
+            {
+                m_timepos_seconds = msg.v0;
+            }
         }
+        juce::String txt{m_timepos_seconds, 1};
+        m_labelTimePos.setText(txt, juce::dontSendNotification);
     }
 }
 

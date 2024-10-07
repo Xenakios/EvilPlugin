@@ -72,6 +72,7 @@ void EvilPluginAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBl
 {
     m_osc_phase = 0.0;
     g_osc_phase = 0.0;
+    m_time_pos = 0;
 }
 
 void EvilPluginAudioProcessor::releaseResources() {}
@@ -167,6 +168,8 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
         bufptrs[0][0] = std::numeric_limits<float>::quiet_NaN();
         bufptrs[1][buffer.getNumSamples() - 1] = std::numeric_limits<float>::quiet_NaN();
     }
+    m_to_gui_fifo.push({OC::TimePosition, 0, m_time_pos / getSampleRate()});
+    m_time_pos += buffer.getNumSamples();
 }
 
 //==============================================================================

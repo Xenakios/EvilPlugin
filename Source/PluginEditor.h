@@ -65,21 +65,15 @@ class MutexLockerThread : public Thread
             Message msg;
             while (m_msg_fifo.pop(msg))
             {
-                if (msg.opcode == Message::Opcode::LockMutex)
+                if (msg.opcode == Message::Opcode::LockMutex && !m_mutex_is_locked)
                 {
-                    if (!m_mutex_is_locked)
-                    {
-                        m_mutex_is_locked = true;
-                        m_proc->m_cs.enter();
-                    }
+                    m_mutex_is_locked = true;
+                    m_proc->m_cs.enter();
                 }
-                if (msg.opcode == Message::Opcode::UnlockMutex)
+                if (msg.opcode == Message::Opcode::UnlockMutex && m_mutex_is_locked)
                 {
-                    if (m_mutex_is_locked)
-                    {
-                        m_mutex_is_locked = false;
-                        m_proc->m_cs.exit();
-                    }
+                    m_mutex_is_locked = false;
+                    m_proc->m_cs.exit();
                 }
             }
             Thread::yield();
@@ -124,6 +118,7 @@ class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public Multi
     Label m_label_waste_gui_cpu;
     Label m_label_waste_audio_cpu;
     Label m_label_waste_worker_cpu;
+    Label m_labelTimePos;
     Slider m_slider_waste_gui_cpu;
     Slider m_slider_waste_audio_cpu;
     Slider m_slider_waste_worker_cpu;
@@ -134,6 +129,7 @@ class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public Multi
     bool m_gui_is_sleeping = false;
 
     int m_num_noise_points = 0;
+    double m_timepos_seconds = 0.0;
     void accessViolation1();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EvilPluginAudioProcessorEditor)

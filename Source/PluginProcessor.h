@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include <cstdint>
 #include <random>
 #include <atomic>
 #include "xen_utilities.h"
@@ -23,7 +24,8 @@ struct ThreadMessage
         UseGlobalVariable,
         LeakMemory,
         BadSampleValue,
-        MixInputAudio
+        MixInputAudio,
+        TimePosition
     };
     Opcode opcode = Opcode::None;
     int i0 = 0;
@@ -74,6 +76,6 @@ class EvilPluginAudioProcessor : public AudioProcessor
     std::mt19937 m_rnd;
     double m_osc_phase = 0.0;
     double m_osc_frequency = 440.0;
-
+    int64_t m_time_pos = 0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EvilPluginAudioProcessor)
 };

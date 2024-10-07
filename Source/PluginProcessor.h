@@ -68,7 +68,7 @@ class EvilPluginAudioProcessor : public AudioProcessor
 
     CriticalSection m_cs;
     void pushStateToGUI();
-
+    std::atomic<bool> m_guiVisible = false;
   private:
     bool m_use_global_variable = false;
     double m_cpu_waste_amount = 0.0;

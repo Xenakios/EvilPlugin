@@ -168,7 +168,10 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
         bufptrs[0][0] = std::numeric_limits<float>::quiet_NaN();
         bufptrs[1][buffer.getNumSamples() - 1] = std::numeric_limits<float>::quiet_NaN();
     }
-    m_to_gui_fifo.push({OC::TimePosition, 0, m_time_pos / getSampleRate()});
+    if (m_guiVisible)
+    {
+        m_to_gui_fifo.push({OC::TimePosition, 0, m_time_pos / getSampleRate()});
+    }
     m_time_pos += buffer.getNumSamples();
 }
 
@@ -185,6 +188,7 @@ void EvilPluginAudioProcessor::pushStateToGUI()
 AudioProcessorEditor *EvilPluginAudioProcessor::createEditor()
 {
     pushStateToGUI();
+    m_guiVisible = true;
     return new EvilPluginAudioProcessorEditor(*this);
 }
 

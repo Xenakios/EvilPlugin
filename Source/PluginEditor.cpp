@@ -148,6 +148,7 @@ EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
 {
     m_mutex_thread.stopThread(1000);
     m_worker_cpu_waster.stopThread(1000);
+    processor.m_guiVisible = false;
 }
 
 void EvilPluginAudioProcessorEditor::paint(Graphics &g) { g.fillAll(Colours::red.darker()); }

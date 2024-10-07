@@ -22,6 +22,8 @@ EvilPluginAudioProcessor::EvilPluginAudioProcessor()
       )
 
 {
+    m_to_audio_fifo.reset(256);
+    m_to_gui_fifo.reset(256);
 }
 
 EvilPluginAudioProcessor::~EvilPluginAudioProcessor() {}
@@ -92,6 +94,33 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
+
+    ThreadMessage msg;
+    using OC = ThreadMessage::Opcode;
+    while (m_to_audio_fifo.pop(msg))
+    {
+        if (msg.opcode == OC::Sleep)
+        {
+            Thread::sleep(1000);
+        }
+        if (msg.opcode == OC::WasteCPU)
+        {
+            m_cpu_waste_amount = msg.v0;
+        }
+        if (msg.opcode == OC::UseGlobalVariable)
+        {
+            if (msg.i0 == 0)
+                m_use_global_variable = false;
+            else
+                m_use_global_variable = true;
+        }
+    }
+    if (m_cpu_waste_amount > 0.0)
+    {
+        double bufferclocklen = 1000.0 / getSampleRate() * buffer.getNumSamples();
+        double timetospend = bufferclocklen * m_cpu_waste_amount / 100.0;
+        CPU_waster(m_rnd, timetospend);
+    }
     double *oscphasevariable = &m_osc_phase;
     if (m_use_global_variable)
         oscphasevariable = &g_osc_phase;
@@ -103,17 +132,6 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
         for (int j = 0; j < buffer.getNumChannels(); ++j)
             bufptrs[j][i] = s;
         (*oscphasevariable) += 1.0;
-    }
-    if (m_sleep_in_audio_thread)
-    {
-        Thread::sleep(1000);
-        m_sleep_in_audio_thread = false;
-    }
-    if (m_cpu_waste_amount > 0.0)
-    {
-        double bufferclocklen = 1000.0 / getSampleRate() * buffer.getNumSamples();
-        double timetospend = bufferclocklen * m_cpu_waste_amount / 100.0;
-        CPU_waster(m_rnd, timetospend);
     }
 }
 

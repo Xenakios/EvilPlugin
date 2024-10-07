@@ -25,6 +25,10 @@ project(AUDIO_PLUGIN_EXAMPLE VERSION 0.0.1)
 # or
 add_subdirectory("C:/develop/juce8/JUCE" ignore EXCLUDE_FROM_ALL)                    # If you've put JUCE in a subdirectory called JUCE
 
+include_directories(
+    libs/choc
+)
+
 # If you are building a VST2 or AAX plugin, CMake needs to be told where to find these SDKs on your
 # system. This setup should be done before calling `juce_add_plugin`.
 

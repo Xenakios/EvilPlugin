@@ -43,7 +43,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
                 repaint();
             });
         },
-        [this]() { processor.m_sleep_in_audio_thread = true; },
+        [this]() { processor.m_to_audio_fifo.push({ThreadMessage::Opcode::Sleep, 0, 0}); },
     };
     jassert(callbacks.size() == buttexts.size());
     for (int i = 0; i < buttexts.size(); ++i)
@@ -69,7 +69,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     addAndMakeVisible(tog.get());
     tog->setButtonText("Use global variables (needs multiple plugin instances to break)");
     tog->onClick = [this, togcap = tog.get()]() {
-        processor.m_use_global_variable = togcap->getToggleState();
+        processor.m_to_audio_fifo.push(
+            {ThreadMessage::Opcode::UseGlobalVariable, togcap->getToggleState(), 0.0});
     };
     m_buttons.push_back(std::move(tog));
 
@@ -97,7 +98,8 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     m_slider_waste_audio_cpu.setNumDecimalPlacesToDisplay(2);
     m_slider_waste_audio_cpu.setTextValueSuffix(" %");
     m_slider_waste_audio_cpu.onValueChange = [this]() {
-        processor.m_cpu_waste_amount = m_slider_waste_audio_cpu.getValue();
+        processor.m_to_audio_fifo.push(
+            {ThreadMessage::Opcode::WasteCPU, 0, m_slider_waste_audio_cpu.getValue()});
     };
 
     addAndMakeVisible(m_slider_waste_worker_cpu);
@@ -176,5 +178,3 @@ void EvilPluginAudioProcessorEditor::accessViolation1()
     int *ptr = nullptr;
     (*ptr)++;
 }
-
-

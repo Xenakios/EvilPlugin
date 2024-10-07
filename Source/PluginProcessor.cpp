@@ -12,6 +12,8 @@
 #include "PluginEditor.h"
 #include "juce_core/juce_core.h"
 
+int instanceCounter = 0;
+
 //==============================================================================
 EvilPluginAudioProcessor::EvilPluginAudioProcessor()
 
@@ -24,6 +26,9 @@ EvilPluginAudioProcessor::EvilPluginAudioProcessor()
 {
     m_to_audio_fifo.reset(256);
     m_to_gui_fifo.reset(256);
+    std::array<float, 4> oscFreqs = {440.0, 440 * 2, 440 * 1.5, 440.0 * 3};
+    m_osc_frequency = oscFreqs[instanceCounter % oscFreqs.size()];
+    ++instanceCounter;
 }
 
 EvilPluginAudioProcessor::~EvilPluginAudioProcessor() {}
@@ -118,6 +123,13 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
         {
             leakMemory(msg.i0);
         }
+        if (msg.opcode == OC::MixInputAudio)
+        {
+            if (msg.i0 == 1)
+                m_mixInputAudio = true;
+            else
+                m_mixInputAudio = false;
+        }
     }
     if (m_cpu_waste_amount > 0.0)
     {
@@ -133,8 +145,17 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
     {
         float s = 0.02 * sin(2 * juce::MathConstants<double>::pi / getSampleRate() *
                              (*oscphasevariable) * m_osc_frequency);
+        float dryLeft = bufptrs[0][i];
+        float dryRight = bufptrs[1][i];
         for (int j = 0; j < buffer.getNumChannels(); ++j)
+        {
             bufptrs[j][i] = s;
+        }
+        if (m_mixInputAudio)
+        {
+            bufptrs[0][i] += dryLeft;
+            bufptrs[1][i] += dryRight;
+        }
         (*oscphasevariable) += 1.0;
     }
 }
@@ -145,8 +166,16 @@ bool EvilPluginAudioProcessor::hasEditor() const
     return true; // (change this to false if you choose to not supply an editor)
 }
 
+void EvilPluginAudioProcessor::pushStateToGUI()
+{
+    using OC = ThreadMessage::Opcode;
+    m_to_gui_fifo.push({OC::MixInputAudio, m_mixInputAudio, 0.0});
+    m_to_gui_fifo.push({OC::UseGlobalVariable, m_use_global_variable, 0.0});
+}
+
 AudioProcessorEditor *EvilPluginAudioProcessor::createEditor()
 {
+    pushStateToGUI();
     return new EvilPluginAudioProcessorEditor(*this);
 }
 

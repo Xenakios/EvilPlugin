@@ -21,7 +21,8 @@ struct ThreadMessage
         Sleep,
         WasteCPU,
         UseGlobalVariable,
-        LeakMemory
+        LeakMemory,
+        MixInputAudio
     };
     Opcode opcode = Opcode::None;
     int i0 = 0;
@@ -63,11 +64,12 @@ class EvilPluginAudioProcessor : public AudioProcessor
     void setStateInformation(const void *data, int sizeInBytes) override;
 
     CriticalSection m_cs;
-    
+    void pushStateToGUI();
 
   private:
     bool m_use_global_variable = false;
     double m_cpu_waste_amount = 0.0;
+    bool m_mixInputAudio = false;
     std::mt19937 m_rnd;
     double m_osc_phase = 0.0;
     double m_osc_frequency = 440.0;

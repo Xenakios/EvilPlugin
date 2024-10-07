@@ -12,62 +12,9 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
+#include "juce_gui_basics/juce_gui_basics.h"
 
 #include <map>
-
-class Animator : public Timer
-{
-  public:
-    enum class State
-    {
-        Started,
-        Running,
-        Finished
-    };
-    Animator(int updateinterval = 40) : m_update_interval(updateinterval)
-    {
-        CurveFunc = identity<double>;
-    }
-    using animfunc = std::function<void(State, double)>;
-    // CurveFunc is given a value between 0.0-1.0 and must return a value between 0.0-1.0
-    std::function<double(double)> CurveFunc;
-    void timerCallback() override
-    {
-        double elapsed = Time::getMillisecondCounterHiRes() - m_starttime;
-        double normpos = 1.0 / m_dur * elapsed;
-        if (m_cb)
-        {
-            if (normpos >= 1.0)
-            {
-                m_cb(State::Finished, CurveFunc(1.0));
-                stopTimer();
-            }
-            else
-                m_cb(State::Running, CurveFunc(normpos));
-        }
-    }
-    void start(double duration, animfunc f)
-    {
-        m_cb = f;
-        m_dur = jlimit(0.1, 600.0, duration) * 1000.0;
-        m_starttime = Time::getMillisecondCounterHiRes();
-        if (m_cb)
-            m_cb(State::Started, CurveFunc(0.0));
-        startTimer(m_update_interval);
-    }
-    void stop()
-    {
-        stopTimer();
-        if (m_cb)
-            m_cb(State::Finished, CurveFunc(1.0));
-    }
-
-  private:
-    animfunc m_cb;
-    double m_starttime = 0.0;
-    double m_dur = 0.1;
-    int m_update_interval = 40;
-};
 
 class CPUWasterThread : public Thread
 {
@@ -148,7 +95,10 @@ class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public Multi
   private:
     EvilPluginAudioProcessor &processor;
     std::vector<std::unique_ptr<Button>> m_buttons;
-    Label m_label_waste_gui_cpu;
+    ToggleButton* m_mixinputButton = nullptr;
+	ToggleButton* m_useGlobalsButton = nullptr;
+	ToggleButton* m_lockAudioMutexButton = nullptr;
+	Label m_label_waste_gui_cpu;
     Label m_label_waste_audio_cpu;
     Label m_label_waste_worker_cpu;
     Slider m_slider_waste_gui_cpu;

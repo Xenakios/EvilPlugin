@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "juce_events/juce_events.h"
 #include "PluginEditor.h"
 
 std::function<void(int)> g_stackoverflowcb;
@@ -72,15 +73,27 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
             m_mutex_thread.startThread();
         m_mutex_thread.m_lock_mutex = togcap->getToggleState();
     };
+    m_lockAudioMutexButton = tog.get();
     m_buttons.push_back(std::move(tog));
 
     tog = std::make_unique<ToggleButton>();
     addAndMakeVisible(tog.get());
-    tog->setButtonText("Use global variables (needs multiple plugin instances to break)");
+    tog->setButtonText("Use global variables (enable in multiple plugin instances to break audio)");
     tog->onClick = [this, togcap = tog.get()]() {
         processor.m_to_audio_fifo.push(
             {ThreadMessage::Opcode::UseGlobalVariable, togcap->getToggleState(), 0.0});
     };
+    m_useGlobalsButton = tog.get();
+    m_buttons.push_back(std::move(tog));
+
+    tog = std::make_unique<ToggleButton>();
+    addAndMakeVisible(tog.get());
+    tog->setButtonText("Pass input audio through");
+    tog->onClick = [this, togcap = tog.get()]() {
+        processor.m_to_audio_fifo.push(
+            {ThreadMessage::Opcode::MixInputAudio, togcap->getToggleState(), 0.0});
+    };
+    m_mixinputButton = tog.get();
     m_buttons.push_back(std::move(tog));
 
     addAndMakeVisible(m_label_waste_gui_cpu);
@@ -100,7 +113,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
         else
             stopTimer(0);
     };
-
+    startTimer(1, 20);
     addAndMakeVisible(m_slider_waste_audio_cpu);
     m_slider_waste_audio_cpu.setRange(0.0, 110.0);
     m_slider_waste_audio_cpu.setValue(0.0, dontSendNotification);
@@ -121,7 +134,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
     };
     m_worker_cpu_waster.startThread();
 
-    setSize(500, 390);
+    setSize(500, 415);
 }
 
 EvilPluginAudioProcessorEditor::~EvilPluginAudioProcessorEditor()
@@ -175,6 +188,19 @@ void EvilPluginAudioProcessorEditor::timerCallback(int id)
     }
     if (id == 1)
     {
+        ThreadMessage msg;
+        using OC = ThreadMessage::Opcode;
+        while (processor.m_to_gui_fifo.pop(msg))
+        {
+            if (msg.opcode == OC::MixInputAudio)
+            {
+                m_mixinputButton->setToggleState(msg.i0, juce::dontSendNotification);
+            }
+            if (msg.opcode == OC::UseGlobalVariable)
+            {
+                m_useGlobalsButton->setToggleState(msg.i0, juce::dontSendNotification);
+            }
+		}
     }
 }
 

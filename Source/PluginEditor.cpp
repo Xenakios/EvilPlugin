@@ -41,13 +41,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
 
         ,
         [this]() {
-            m_gui_is_sleeping = true;
-            repaint();
-            Timer::callAfterDelay(100, [this]() {
-                Thread::sleep(2000);
-                m_gui_is_sleeping = false;
-                repaint();
-            });
+            Thread::sleep(2000);
         },
         [this]() { processor.m_to_audio_fifo.push({ThreadMessage::Opcode::Sleep, 0, 0}); },
         [this]() { leakMemory(m_memLeakAmount); },

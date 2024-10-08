@@ -141,8 +141,6 @@ class EvilPluginAudioProcessorEditor : public AudioProcessorEditor, public Multi
     MutexLockerThread m_mutex_thread;
     CPUWasterThread m_worker_cpu_waster;
 
-    bool m_gui_is_sleeping = false;
-
     int m_num_noise_points = 0;
     double m_timepos_seconds = 0.0;
     void accessViolation1();

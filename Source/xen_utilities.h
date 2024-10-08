@@ -182,6 +182,7 @@ static std::pair<int64_t, double> CPU_waster(std::mt19937 &rng, double durationt
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
     std::atomic<double> acc{0.0};
     int64_t loopcount = 0;
+
     double t0 = Time::getMillisecondCounterHiRes();
     while (true)
     {

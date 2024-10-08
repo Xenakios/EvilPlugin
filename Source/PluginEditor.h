@@ -23,7 +23,7 @@ class CPUWasterThread : public Thread
 {
   public:
     CPUWasterThread() : Thread("EvilPluginCPUWasterThread") {}
-    double m_amount_to_waste = 0.0;
+    std::atomic<double> m_amount_to_waste = 0.0;
     void run() override
     {
         while (true)

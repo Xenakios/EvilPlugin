@@ -17,7 +17,7 @@ EvilPluginAudioProcessor::EvilPluginAudioProcessor()
     m_to_audio_fifo.reset(256);
     m_to_gui_fifo.reset(256);
     std::array<float, 4> oscFreqs = {440.0, 440 * 2, 440 * 1.5, 440.0 * 3};
-    m_osc_frequency = oscFreqs[instanceCounter % oscFreqs.size()];
+    // m_osc_frequency = oscFreqs[instanceCounter % oscFreqs.size()];
     ++instanceCounter;
 }
 
@@ -90,7 +90,7 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
-    int badSample = 0;
+    int badSamples = 0;
     ThreadMessage msg;
     using OC = ThreadMessage::Opcode;
     while (m_to_audio_fifo.pop(msg))
@@ -123,7 +123,7 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
         }
         if (msg.opcode == OC::BadSampleValue)
         {
-            badSample = msg.i0;
+            badSamples = msg.i0;
         }
     }
     if (m_cpu_waste_amount > 0.0)
@@ -153,10 +153,28 @@ void EvilPluginAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuff
         }
         (*oscphasevariable) += 1.0;
     }
-    if (badSample == 1)
+    if (badSamples == 1)
     {
-        bufptrs[0][0] = std::numeric_limits<float>::quiet_NaN();
-        bufptrs[1][buffer.getNumSamples() - 1] = std::numeric_limits<float>::quiet_NaN();
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            for (int j = 0; j < totalNumOutputChannels; ++j)
+            {
+                int choice = m_int_dist(m_rnd);
+                if (choice == 0)
+                    bufptrs[j][i] = std::numeric_limits<float>::signaling_NaN();
+                else if (choice == 1)
+                    bufptrs[j][i] = std::numeric_limits<float>::infinity();
+                else if (choice == 2)
+                {
+                    // 1000000 should be enough to trigger the host "go silent" things
+                    if (m_bool_dist(m_rnd) == 0)
+                        bufptrs[j][i] = 1000000.0; 
+                    else
+                        bufptrs[j][i] = -1000000.0;
+                }
+                // choice 3 is for don't corrupt the output sample
+            }
+        }
     }
     if (m_guiVisible)
     {

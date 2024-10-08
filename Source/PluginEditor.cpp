@@ -28,6 +28,10 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
         [this]() { accessViolation1(); },
         [this]() { heapTrash(); },
         []() {
+            int array[100 * 1024 * 1024];
+            array[50 * 1024 * 1024] = 42;
+            std::cout << array[50 * 1024 * 1024] << "\n";
+            return;
             g_stackoverflowcb = stackoverflowfunc1;
             volatile int x = 0;
             stackoverflowfunc1(x);
@@ -40,9 +44,7 @@ EvilPluginAudioProcessorEditor::EvilPluginAudioProcessorEditor(EvilPluginAudioPr
         }
 
         ,
-        [this]() {
-            Thread::sleep(2000);
-        },
+        [this]() { Thread::sleep(2000); },
         [this]() { processor.m_to_audio_fifo.push({ThreadMessage::Opcode::Sleep, 0, 0}); },
         [this]() { leakMemory(m_memLeakAmount); },
         [this]() {

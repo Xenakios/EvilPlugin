@@ -55,6 +55,7 @@ class EvilPluginAudioProcessor : public AudioProcessor
     bool acceptsMidi() const override;
     bool producesMidi() const override;
     bool isMidiEffect() const override;
+
     double getTailLengthSeconds() const override;
 
     int getNumPrograms() override;
@@ -69,11 +70,14 @@ class EvilPluginAudioProcessor : public AudioProcessor
     CriticalSection m_cs;
     void pushStateToGUI();
     std::atomic<bool> m_guiVisible = false;
+
   private:
     bool m_use_global_variable = false;
     double m_cpu_waste_amount = 0.0;
     bool m_mixInputAudio = false;
     std::mt19937 m_rnd;
+    std::uniform_int_distribution<int> m_int_dist{0, 3};
+    std::uniform_int_distribution<int> m_bool_dist{0, 1};
     double m_osc_phase = 0.0;
     double m_osc_frequency = 440.0;
     int64_t m_time_pos = 0;
